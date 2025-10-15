@@ -16,6 +16,8 @@ export const checkRole = (...allowedRoles) => {
           message: `Access denied. Required roles: ${allowedRoles.join(", ")}`,
         });
       }
+
+      next();
     } catch (error) {
       console.error("Role middleware error:", error);
       res.status(500).json({
