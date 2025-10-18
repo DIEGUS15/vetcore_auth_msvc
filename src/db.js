@@ -21,11 +21,21 @@ export const sequelize = new Sequelize(
   }
 );
 
-export const testConnection = async () => {
-  try {
-    await sequelize.authenticate();
-    console.log("Database successfully connected");
-  } catch (error) {
-    console.error("Error connecting to the database:", error);
+export const testConnection = async (retries = 5, delay = 5000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await sequelize.authenticate();
+      console.log("✅ Database successfully connected");
+      return true;
+    } catch (error) {
+      console.log(
+        `⏳ Attempt ${i + 1}/${retries} - Waiting for database connection...`
+      );
+      if (i === retries - 1) {
+        console.error("❌ Error connecting to the database:", error.message);
+        throw error;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
 };

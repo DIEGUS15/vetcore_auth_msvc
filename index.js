@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { sequelize, testConnection } from "./src/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import { seedRoles } from "./src/seeders/roleSeeder.js";
 
 dotenv.config();
 
@@ -29,6 +30,9 @@ const startServer = async () => {
     // Sincronizar modelos con la base de datos
     await sequelize.sync({ alter: true });
     console.log("✅ Modelos sincronizados con la base de datos");
+
+    // Seed roles
+    await seedRoles();
 
     // Iniciar servidor
     app.listen(PORT, () => {
