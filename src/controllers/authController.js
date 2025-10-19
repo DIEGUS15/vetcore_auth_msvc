@@ -148,3 +148,31 @@ export const login = async (req, res) => {
     });
   }
 };
+
+export const verifyToken = async (req, res) => {
+  try {
+    // El middleware verifyToken ya validó el token y agregó el usuario a req.user
+    res.status(200).json({
+      success: true,
+      message: "Token is valid.",
+      data: {
+        user: {
+          id: req.user.id,
+          fullname: req.user.fullname,
+          email: req.user.email,
+          telephone: req.user.telephone,
+          address: req.user.address,
+          role: req.user.role.name,
+          isActive: req.user.isActive,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Verify token error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying token",
+      error: error.message,
+    });
+  }
+};
