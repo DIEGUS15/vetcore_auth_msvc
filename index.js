@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { sequelize, testConnection } from "./src/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
+import userRoutes from "./src/routes/userRoutes.js";
 import { seedRoles } from "./src/seeders/roleSeeder.js";
 
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rutas
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 
 // Ruta de prueba
 app.get("/", (req, res) => {
