@@ -16,9 +16,9 @@ export const seedRoles = async () => {
       });
     }
 
-    console.log("✅ Roles seeded successfully");
+    console.log("Roles creados correctamente");
   } catch (error) {
-    console.error("❌ Error seeding roles:", error);
+    console.error("Hubo un error al crear los datos, error:", error);
     throw error;
   }
 };

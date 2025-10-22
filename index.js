@@ -6,6 +6,7 @@ import userRoutes from "./src/routes/userRoutes.js";
 import { seedRoles } from "./src/seeders/roleSeeder.js";
 
 dotenv.config();
+console.log("JWT_SECRET desde .env:", process.env.JWT_SECRET);
 
 const app = express();
 const PORT = process.env.PORT || 3000;

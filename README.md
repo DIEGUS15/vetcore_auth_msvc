@@ -1,1 +1,0 @@
-# vetcore_auth_msvc
