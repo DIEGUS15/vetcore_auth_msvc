@@ -1,0 +1,76 @@
+# Docker Compose para desarrollo independiente del Auth Service
+# Uso: docker-compose up
+
+services:
+  # Base de datos MySQL para Auth Service
+  # mysql-auth-db:
+  #   image: mysql:8.0
+  #   container_name: vetcore_mysql_auth_dev
+  #   restart: always
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: rootpassword
+  #     MYSQL_DATABASE: vetcore_auth_db
+  #     MYSQL_USER: vetcore_auth_user
+  #     MYSQL_PASSWORD: vetcore_pass
+  #   ports:
+  #     - "3308:3306"
+  #   volumes:
+  #     - mysql_auth_data_dev:/var/lib/mysql
+  #   networks:
+  #     - auth-network
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     timeout: 20s
+  #     retries: 10
+
+
+  # Servicio de Autenticación
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vetcore_auth_dev
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      DB_HOST: mysql-auth-db
+      DB_PORT: 3306
+      DB_NAME: vetcore_auth_db
+      DB_USER: vetcore_auth_user
+      DB_PASSWORD: vetcore_pass
+      JWT_SECRET: your_super_secret_jwt_key_change_this_in_production
+      JWT_EXPIRES_IN: 24h
+      NODE_ENV: development
+#    depends_on:
+#      mysql-auth-db:
+#        condition: service_healthy
+    networks:
+      - auth-network
+    # Descomentar para hot-reload en desarrollo
+    # volumes:
+    #   - ./src:/app/src
+    #   - /app/node_modules
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  auth-network:
+    driver: bridge
+
+volumes:
+  mysql_auth_data_dev:
+    driver: local

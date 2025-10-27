@@ -15,6 +15,4 @@ COPY . .
 EXPOSE 3000
 
 # Comando para iniciar la aplicación
-CMD  ["npm", "run", "dev"]
-
-# CMD ["node", "src/publishUser.js" ] esto es para probar la creacion de un usuario y el manejo de la cola con rabbitmq y la notificacion al gmail
+CMD ["npm", "run", "dev"]
