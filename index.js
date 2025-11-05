@@ -4,6 +4,7 @@ import { sequelize, testConnection } from "./src/db.js";
 import authRoutes from "./src/routes/authRoutes.js";
 import userRoutes from "./src/routes/userRoutes.js";
 import { seedRoles } from "./src/seeders/roleSeeder.js";
+import { connectRabbitMQ, closeConnection } from "./src/config/rabbitmq.js";
 
 dotenv.config();
 
@@ -36,6 +37,10 @@ const startServer = async () => {
     // Seed roles
     await seedRoles();
 
+    // Conectar a RabbitMQ
+    await connectRabbitMQ();
+    console.log("RabbitMQ connected in Auth Service");
+
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
@@ -45,5 +50,18 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+// Manejo de cierre graceful
+process.on("SIGINT", async () => {
+  console.log("\nShutting down gracefully...");
+  await closeConnection();
+  process.exit(0);
+});
+
+process.on("SIGTERM", async () => {
+  console.log("\nShutting down gracefully...");
+  await closeConnection();
+  process.exit(0);
+});
 
 startServer();

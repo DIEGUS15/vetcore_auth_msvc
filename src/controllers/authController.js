@@ -1,5 +1,7 @@
 import { User, Role } from "../models/associations.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import { publishEvent } from "../config/rabbitmq.js";
 
 export const register = async (req, res) => {
   try {
@@ -41,6 +43,20 @@ export const register = async (req, res) => {
       password,
       roleId: role.id,
     });
+
+    // Publicar evento de usuario creado para notificaciones
+    try {
+      await publishEvent("client.created", {
+        email: newUser.email,
+        fullname: newUser.fullname,
+        userId: newUser.id,
+        roleName: role.name,
+      });
+      console.log(`Event client.created published for user: ${newUser.email}`);
+    } catch (error) {
+      // No fallar el registro si falla la publicación del evento
+      console.error("Error publishing client.created event:", error);
+    }
 
     res.status(201).json({
       success: true,
@@ -139,6 +155,7 @@ export const login = async (req, res) => {
           address: user.address,
           role: user.role.name,
           isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword, // Indicar si debe cambiar contraseña
         },
       },
     });
@@ -175,6 +192,71 @@ export const verifyToken = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error verifying token",
+      error: error.message,
+    });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id; // El usuario viene del middleware de autenticación
+
+    // Validar que se envíen ambos campos
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required.",
+      });
+    }
+
+    // Validar longitud mínima de la nueva contraseña
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be at least 8 characters long.",
+      });
+    }
+
+    // Buscar el usuario
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Verificar que la contraseña actual sea correcta
+    const isPasswordValid = await user.comparePassword(currentPassword);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Current password is incorrect.",
+      });
+    }
+
+    // Hashear la nueva contraseña
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Actualizar la contraseña y desactivar el flag mustChangePassword
+    await user.update({
+      password: hashedPassword,
+      mustChangePassword: false,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    console.error("Change password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error changing password.",
       error: error.message,
     });
   }

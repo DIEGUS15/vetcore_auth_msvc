@@ -26,6 +26,11 @@ const User = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    mustChangePassword: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      comment: "Indica si el usuario debe cambiar su contraseña en el próximo login",
+    },
     email: {
       type: DataTypes.STRING(100),
       allowNull: false,

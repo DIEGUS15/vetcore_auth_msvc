@@ -1,5 +1,7 @@
 import { User, Role } from "../models/associations.js";
 import bcrypt from "bcryptjs";
+import { generateRandomPassword } from "../utils/passwordGenerator.js";
+import { publishEvent } from "../config/rabbitmq.js";
 
 export const getUsers = async (req, res) => {
   try {
@@ -164,12 +166,15 @@ export const createUser = async (req, res) => {
     } = req.body;
 
     // Validar campos obligatorios
-    if (!fullname || !email || !password) {
+    if (!fullname || !email) {
       return res.status(400).json({
         success: false,
-        message: "Fullname, email, and password are required.",
+        message: "Fullname and email are required.",
       });
     }
+
+    // Generar contraseña temporal aleatoria automáticamente (ignorar password del request)
+    const temporaryPassword = generateRandomPassword(12);
 
     // Verificar si el email ya existe
     const existingUser = await User.findOne({ where: { email } });
@@ -199,9 +204,25 @@ export const createUser = async (req, res) => {
       address,
       isActive: isActive !== undefined ? isActive : true,
       email,
-      password, // Se encripta automáticamente en el hook del modelo
+      password: temporaryPassword, // Se encripta automáticamente en el hook del modelo
       roleId: role.id,
+      mustChangePassword: true, // Usuario debe cambiar contraseña en primer login
     });
+
+    // Publicar evento de usuario creado por admin para enviar email con credenciales
+    try {
+      await publishEvent("user.created.by.admin", {
+        email: newUser.email,
+        fullname: newUser.fullname,
+        userId: newUser.id,
+        roleName: role.name,
+        temporaryPassword: temporaryPassword, // Enviar contraseña sin encriptar al email
+      });
+      console.log(`Event user.created.by.admin published for user: ${newUser.email}`);
+    } catch (error) {
+      // No fallar la creación si falla la publicación del evento
+      console.error("Error publishing user.created.by.admin event:", error);
+    }
 
     // Obtener el usuario creado con el rol
     const createdUser = await User.findByPk(newUser.id, {
@@ -217,7 +238,7 @@ export const createUser = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "User created successfully by admin.",
+      message: "User created successfully by admin. Temporary password sent via email.",
       data: createdUser,
     });
   } catch (error) {
