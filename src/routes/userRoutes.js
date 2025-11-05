@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getUsers,
+  getUserById,
   createUser,
   updateUser,
   deleteUser,
@@ -11,6 +12,8 @@ import { checkRole } from "../middlewares/roleMiddleware.js";
 const router = Router();
 
 router.get("/", verifyToken, checkRole("admin", "veterinarian"), getUsers);
+
+router.get("/:id", verifyToken, getUserById);
 
 router.post("/", verifyToken, checkRole("admin"), createUser);
 
