@@ -5,6 +5,7 @@ import {
   createUser,
   updateUser,
   deleteUser,
+  getVeterinarians,
 } from "../controllers/userController.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 import { checkRole } from "../middlewares/roleMiddleware.js";
@@ -12,6 +13,9 @@ import { checkRole } from "../middlewares/roleMiddleware.js";
 const router = Router();
 
 router.get("/", verifyToken, checkRole("admin", "veterinarian"), getUsers);
+
+// Ruta específica para obtener veterinarios (debe ir antes de /:id)
+router.get("/veterinarians/list", verifyToken, getVeterinarians);
 
 router.get("/:id", verifyToken, getUserById);
 

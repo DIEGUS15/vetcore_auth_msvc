@@ -334,3 +334,52 @@ export const deleteUser = async (req, res) => {
     });
   }
 };
+
+/**
+ * Obtiene lista de veterinarios (accesible para todos los usuarios autenticados)
+ */
+export const getVeterinarians = async (req, res) => {
+  try {
+    // Buscar el rol de veterinario
+    const veterinarianRole = await Role.findOne({ where: { name: "veterinarian" } });
+
+    if (!veterinarianRole) {
+      return res.status(404).json({
+        success: false,
+        message: "Veterinarian role not found",
+      });
+    }
+
+    // Obtener todos los veterinarios activos
+    const veterinarians = await User.findAll({
+      where: {
+        roleId: veterinarianRole.id,
+        isActive: true,
+      },
+      attributes: ["id", "fullname", "email", "telephone"],
+      include: [
+        {
+          model: Role,
+          as: "role",
+          attributes: ["id", "name"],
+        },
+      ],
+      order: [["fullname", "ASC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        veterinarians,
+        count: veterinarians.length,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching veterinarians:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching veterinarians",
+      error: error.message,
+    });
+  }
+};
