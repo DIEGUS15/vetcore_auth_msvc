@@ -30,16 +30,21 @@ const startServer = async () => {
     // Probar conexión
     await testConnection();
 
-    // Sincronizar modelos con la base de datos
-    await sequelize.sync({ alter: true });
+    // Sincronizar modelos con la base de datos (sin alter para evitar conflictos)
+    await sequelize.sync({ force: false });
     console.log("Modelos sincronizados con la base de datos");
 
     // Seed roles
     await seedRoles();
 
-    // Conectar a RabbitMQ
-    await connectRabbitMQ();
-    console.log("RabbitMQ connected in Auth Service");
+    // Conectar a RabbitMQ (no crítico - el servicio puede funcionar sin él)
+    try {
+      await connectRabbitMQ();
+      console.log("RabbitMQ connected in Auth Service");
+    } catch (error) {
+      console.warn("⚠️  Warning: RabbitMQ connection failed. Service will continue without event publishing.");
+      console.warn("RabbitMQ error:", error.message);
+    }
 
     // Iniciar servidor
     app.listen(PORT, () => {
